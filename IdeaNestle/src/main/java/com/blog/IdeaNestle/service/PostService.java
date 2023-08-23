@@ -1,38 +1,46 @@
 package com.blog.IdeaNestle.service;
 
 import com.blog.IdeaNestle.model.Post;
+import com.blog.IdeaNestle.model.User;
 import com.blog.IdeaNestle.payload.request.PostRequest;
 import com.blog.IdeaNestle.payload.response.PostResponse;
 import com.blog.IdeaNestle.repository.PostRepository;
-import jakarta.validation.constraints.NotNull;
+import com.blog.IdeaNestle.repository.UserRepository;
+import com.blog.IdeaNestle.security.jwt.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
 @Service
 public class PostService {
     @Autowired
-    private PostRepository postRepository;
+    private UserRepository userRepository;
 
-    public PostService(PostRepository postRepository) {
+    private final PostRepository postRepository;
+
+    private final JwtUtils jwtUtils;
+    @Autowired
+    public PostService(PostRepository postRepository, JwtUtils jwtUtils) {
         this.postRepository = postRepository;
+        this.jwtUtils = jwtUtils;
     }
 
-    public List<PostResponse> getAllPosts() {
-        List<Post> post = postRepository.findAll();
-        if(post.isEmpty()) {
+    public List<PostResponse> getAllApprovedPosts() {
+        List<Post> approvedPosts = postRepository.findAllByStatus(Post.PostStatus.APPROVED);
+        if (approvedPosts.isEmpty()) {
             return new ArrayList<>();
         }
 
-        return post.stream()
+        return approvedPosts.stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
+
 
     public PostResponse getPostByTitle(String title) {
         Post post = (Post) postRepository.findByTitle(title)
@@ -46,13 +54,40 @@ public class PostService {
     }
 
     public PostResponse createPost(PostRequest postRequest) {
-//        Post post = mapToEntity(postRequest);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
         Post post = new Post();
         post.setTitle(postRequest.getTitle());
         post.setContent(postRequest.getContent());
-        postRepository.save(post);
-        return null;
+        post.setUsername(username);
+        post.setStatus(Post.PostStatus.APPROVED); // Set the status to approved
+
+        // Save the post to get its ID
+        post = postRepository.save(post);
+
+        User user = userRepository.findByUsername(username); // Fetch the user
+        int restrictedPostCount = postRepository.countByUsersAndStatus(user, Post.PostStatus.RESTRICTED);
+        if (post.getStatus() == Post.PostStatus.RESTRICTED) {
+
+            if (restrictedPostCount >= 5) {
+                user.setState(User.UserState.INACTIVE);
+                userRepository.save(user);
+            }
+        } else {
+            // Check the user's state and post count for posts with status RESTRICTED
+
+            if (user.getState() == User.UserState.ACTIVE && restrictedPostCount >= 5) {
+                user.setState(User.UserState.INACTIVE);
+                userRepository.save(user);
+            }
+        }
+
+        return mapToResponse(post);
     }
+
+
+
 
     public boolean deletePostByTitle(String title) {
         if (postRepository.existsByTitle(title)) {
@@ -63,12 +98,14 @@ public class PostService {
         return false;
     }
 
-    private @NotNull PostResponse mapToResponse(@NotNull Post post) {
+    private PostResponse mapToResponse(Post post) {
         return new PostResponse(
                 post.getTitle(),
-                post.getContent()
+                post.getContent(),
+                post.getUsername() // Use the username field from the Post entity
         );
     }
+
 
     private Post mapToEntity(PostRequest request) {
         Post post = new Post();

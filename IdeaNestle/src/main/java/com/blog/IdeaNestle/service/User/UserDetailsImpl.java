@@ -38,6 +38,10 @@ public class UserDetailsImpl implements UserDetails {
 
 	private Collection<? extends GrantedAuthority> authorities;
 
+	private User.UserState state; // Add the user's state field here
+
+	private User user;
+
 	public static UserDetailsImpl build(User user) {
 		List<GrantedAuthority> authorities = user.getRoles().stream()
 				.map(role -> new SimpleGrantedAuthority(role.getName().name()))
@@ -52,7 +56,10 @@ public class UserDetailsImpl implements UserDetails {
 				user.getUsername(), 
 				user.getEmail(),
 				user.getPassword(), 
-				authorities);
+				authorities,
+				user.getState(), // Set the user's state here
+				user
+		);
 	}
 
 	@Override
@@ -95,7 +102,7 @@ public class UserDetailsImpl implements UserDetails {
 
 	@Override
 	public boolean isEnabled() {
-		return true;
+		return state == User.UserState.ACTIVE;
 	}
 
 	@Override

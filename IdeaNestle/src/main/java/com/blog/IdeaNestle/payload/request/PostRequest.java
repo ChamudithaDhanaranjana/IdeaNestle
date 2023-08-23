@@ -14,4 +14,5 @@ import java.time.LocalDate;
 public class PostRequest {
     private String title;
     private String content;
+    private String username;
 }

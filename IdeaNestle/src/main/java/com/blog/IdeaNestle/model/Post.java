@@ -1,17 +1,14 @@
 package com.blog.IdeaNestle.model;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import javax.persistence.Table;
-import java.time.Instant;
-import java.time.LocalDate;
+import java.util.HashSet;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -19,6 +16,15 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @Document(collection = "posts")
 public class Post {
+    private PostStatus status = PostStatus.APPROVED;
     private String title;
     private String content;
+    private String username;
+    @DBRef
+    private Set<User> users = new HashSet<>();
+    public enum PostStatus {
+        APPROVED, RESTRICTED
+    }
 }
+
+

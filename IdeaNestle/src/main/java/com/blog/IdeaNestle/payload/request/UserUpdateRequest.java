@@ -1,15 +1,16 @@
-package com.blog.IdeaNestle.payload.response;
+package com.blog.IdeaNestle.payload.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDate;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostResponse {
-    private String title;
-    private String content;
+@Getter
+public class UserUpdateRequest {
     private String username;
+    private String password;
+    private String email;
 }

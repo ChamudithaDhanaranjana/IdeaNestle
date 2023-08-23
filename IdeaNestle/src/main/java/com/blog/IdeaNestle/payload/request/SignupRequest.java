@@ -22,7 +22,7 @@ public class SignupRequest {
     private LocalDate dob;
 
     @NotBlank
-    @Size(min = 5, max = 20)
+    @Size(min = 5)
     private String username;
  
     @NotBlank
