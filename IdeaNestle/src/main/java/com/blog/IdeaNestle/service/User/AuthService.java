@@ -60,23 +60,17 @@ public class AuthService {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword()));
-
             SecurityContextHolder.getContext().setAuthentication(authentication);
-
             UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-
             User user = userDetails.getUser();
             if (user.getState() == User.UserState.INACTIVE) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(new MessageResponse("User is inactive and cannot sign in"));
             }
-
             String jwt = jwtUtils.generateJwtToken(authentication);
-
             List<String> roles = userDetails.getAuthorities().stream()
                     .map(item -> item.getAuthority())
                     .collect(Collectors.toList());
-
             return ResponseEntity.ok(new JwtResponse(jwt,
                     userDetails.getId(),
                     userDetails.getUsername(),
@@ -95,23 +89,19 @@ public class AuthService {
     }
 
     public ResponseEntity<?> registerUser(SignupRequest signUpRequest) {
-        logger.info("The /signup endpoint has been reached");
+        logger.info("The signup endpoint has been reached");
         if (userRepository.existsByUsername(signUpRequest.getUsername())) {
             logger.error("Username is already taken");
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Error: Username is already taken!"));
         }
-
-
         if (userRepository.existsByEmail(signUpRequest.getEmail())) {
             logger.error("Email is already in use");
             return ResponseEntity
                     .badRequest()
                     .body(new MessageResponse("Error: Email is already in use!"));
         }
-
-        // Create new user's account
         User user = new User();
         user.setFirstName(signUpRequest.getFirstName());
         user.setLastName(signUpRequest.getLastName());
@@ -121,13 +111,10 @@ public class AuthService {
         user.setEmail(signUpRequest.getEmail());
         user.setPassword(encoder.encode(signUpRequest.getPassword()));
         user.setState(User.UserState.ACTIVE);
-
         logger.info("Password has been encoded");
-
-        Set<String> strRoles = signUpRequest.getRoles();
+        Set<Role.ERole> strRoles = signUpRequest.getRoles();
         Set<Role> roles = new HashSet<>();
-
-        if (strRoles == null) {
+        if (strRoles.isEmpty()) {
             Role userRole = roleRepository.findByName(Role.ERole.ROLE_USER)
                     .orElseThrow(() -> {
                         logger.error("Role is not found");
@@ -135,49 +122,31 @@ public class AuthService {
                     });
             logger.info("The user has been assigned the role of ROLE_USER");
             roles.add(userRole);
-
-        } else {
-            strRoles.forEach(role -> {
-                switch (role) {
-                    case "admin":
-                        Role adminRole = roleRepository.findByName(Role.ERole.ROLE_ADMIN)
-                                .orElseThrow(() -> {
-                                    logger.error("Role is not found");
-                                    return new RuntimeException("Error: Role is not found.");
-                                });
-                        logger.info("The user has been assigned the role of ADMIN");
-                        roles.add(adminRole);
-
-                        break;
-                    default:
-                        Role userRole = roleRepository.findByName(Role.ERole.ROLE_USER)
-                                .orElseThrow(() -> {
-                                    logger.error("Role is not found");
-                                    return new RuntimeException("Error: Role is not found.");
-                                });
-                        logger.info("The user has been assigned the role of ROLE_USER");
-                        roles.add(userRole);
-                }
-            });
+        }else{
+           for (Role.ERole userRoles : strRoles) {
+               Role userRole = roleRepository.findByName(userRoles)
+                       .orElseThrow(() -> {
+                           logger.error("Role is not found");
+                           return new RuntimeException("Error: Role is not found.");
+                       });
+               roles.add(userRole);
+           }
         }
-
         user.setId(service.getSequenceNumber(User.SEQUENCE_NAME));
         user.setRoles(roles);
         logger.info("All roles have been assigned to the user");
         userRepository.save(user);
         logger.info("User successfully saved to the database");
         logger.info("User registered successfully!");
-
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
+
     public ResponseEntity<String> deleteUserByUsername(@PathVariable String username) {
         User user = userRepository.findByUsername(username);
-
         if (user != null) {
             // Change the user's state to INACTIVE and save
             user.setState(User.UserState.INACTIVE);
             userRepository.save(user);
-
             return ResponseEntity.ok("User deleted successfully");
         } else {
             return ResponseEntity.notFound().build(); // Return 404 Not Found if user not found
@@ -198,14 +167,10 @@ public class AuthService {
         Optional<User> optionalUser = Optional.ofNullable(userRepository.findByUsername(currentUsername));
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-
-            // Check if the current user matches the user being updated
             if (!currentUsername.equals(updateRequest.getUsername())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body("You are not authorized to update this user's account");
             }
-
-            // Update username, password, and email
             if (updateRequest.getUsername() != null) {
                 user.setUsername(updateRequest.getUsername());
             }
@@ -215,7 +180,6 @@ public class AuthService {
             if (updateRequest.getEmail() != null) {
                 user.setEmail(updateRequest.getEmail());
             }
-
             userRepository.save(user);
             return ResponseEntity.ok("User updated successfully");
         } else {
@@ -225,14 +189,11 @@ public class AuthService {
 
     public ResponseEntity<String> updateAdminUserState(Long id, UserStateUpdateRequest stateUpdateRequest) {
         Optional<User> optionalUser = userRepository.findById(id);
-
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-
             if (stateUpdateRequest.getState() == null) {
                 return ResponseEntity.badRequest().body("State field is required for admin update");
             }
-
             user.setState(stateUpdateRequest.getState());
             userRepository.save(user);
             return ResponseEntity.ok("User state updated successfully by admin");
@@ -240,5 +201,4 @@ public class AuthService {
             return ResponseEntity.notFound().build();
         }
     }
-
 }

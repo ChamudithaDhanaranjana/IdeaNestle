@@ -10,14 +10,9 @@ import java.util.Optional;
 
 @Repository
 public interface PostRepository extends MongoRepository<Post, Long> {
-    Optional<Object> findByTitle(String title);
-
-    void deleteByTitle(String title);
-
-    boolean existsByTitle(String title);
-
     List<Post> findAllByStatus(Post.PostStatus postStatus);
-
-    int countByUsersAndStatus(User user, Post.PostStatus postStatus);
+    Optional<Object> findById(String id);
+    boolean existsById(String id);
+    void deleteById(String id);
 
 }

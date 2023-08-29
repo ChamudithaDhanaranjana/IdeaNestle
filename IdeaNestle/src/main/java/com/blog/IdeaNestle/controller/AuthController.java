@@ -27,24 +27,18 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
-
 	private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
 	@Autowired
 	private AuthenticationManager authenticationManager;
-
 	@Autowired
 	private UserRepository userRepository;
-
 	@Autowired
 	private RoleRepository roleRepository;
-
 	@Autowired
 	private JwtUtils jwtUtils;
-
 	@Autowired
 	private PasswordEncoder passwordEncoder;
-
 	@Autowired
 	private AuthService authService;
 
@@ -57,7 +51,6 @@ public class AuthController {
 	public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
 		return authService.registerUser(signUpRequest);
 	}
-
 
 	@PostMapping("/delete/user/{username}")
 	@PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_USER')")
@@ -92,6 +85,5 @@ public class AuthController {
 	public ResponseEntity<String> updateAdminUserState(@PathVariable Long id, @RequestBody UserStateUpdateRequest stateUpdateRequest) {
 		return authService.updateAdminUserState(id, stateUpdateRequest);
 	}
-
 }
 

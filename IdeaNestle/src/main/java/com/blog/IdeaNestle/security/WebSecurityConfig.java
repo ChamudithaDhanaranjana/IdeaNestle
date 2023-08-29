@@ -24,7 +24,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class WebSecurityConfig {
   @Autowired
   UserDetailsServiceImpl userDetailsService;
-
   @Autowired
   private AuthEntryPointJwt unauthorizedHandler;
 
@@ -32,7 +31,6 @@ public class WebSecurityConfig {
   public AuthTokenFilter authenticationJwtTokenFilter() {
     return new AuthTokenFilter();
   }
-
   @Bean
   public DaoAuthenticationProvider authenticationProvider() {
     DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
@@ -42,17 +40,14 @@ public class WebSecurityConfig {
 
     return authProvider;
   }
-
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
     return authConfig.getAuthenticationManager();
   }
-
   @Bean
   public PasswordEncoder passwordEncoder() {
     return new BCryptPasswordEncoder();
   }
-
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http.csrf(csrf -> csrf.disable())
@@ -60,14 +55,11 @@ public class WebSecurityConfig {
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**").permitAll().
                 requestMatchers("/api/posts/**").permitAll().
-               requestMatchers("/").permitAll().
+               requestMatchers("/api/comments/**").permitAll().
                 requestMatchers("/api/manage")
             .permitAll().anyRequest().authenticated());
-
     http.authenticationProvider(authenticationProvider());
-
     http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
-
     return http.build();
   }
 }

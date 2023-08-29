@@ -21,7 +21,6 @@ import java.io.IOException;
 public class AuthTokenFilter extends OncePerRequestFilter {
   @Autowired
   private JwtUtils jwtUtils;
-
   @Autowired
   private UserDetailsServiceImpl userDetailsService;
 
@@ -55,7 +54,6 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     if (StringUtils.hasText(headerAuth) && headerAuth.startsWith("Bearer ")) {
       return headerAuth.substring(7, headerAuth.length());
     }
-
     return null;
   }
 }

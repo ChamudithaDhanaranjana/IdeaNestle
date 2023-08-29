@@ -30,7 +30,6 @@ public class User implements Serializable {
 
   @Id
   private int id;
-
   private String firstName;
   private String lastName;
   private Gender gender;
@@ -51,16 +50,11 @@ public class User implements Serializable {
 
   @DBRef
   private Set<Role> roles = new HashSet<>();
-
+  @NotBlank
   private UserState state;
 
   public void setRoles(Set<Role> roles) {
     this.roles = roles;
-  }
-
-
-  public void setUsername(String username) {
-
   }
 
   public enum Gender {
@@ -68,10 +62,10 @@ public class User implements Serializable {
     FEMALE,
     OTHER
   }
+
   public enum UserState {
     ACTIVE,
     INACTIVE;
-
   }
 }
 
