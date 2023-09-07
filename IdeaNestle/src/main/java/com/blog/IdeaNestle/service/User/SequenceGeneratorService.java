@@ -14,7 +14,6 @@ import java.util.Objects;
 
 @Service
 public class SequenceGeneratorService {
-
     @Autowired
     private MongoOperations mongoOperations;
 
@@ -30,8 +29,6 @@ public class SequenceGeneratorService {
                 new FindAndModifyOptions().returnNew(true).upsert(true),
                 DBSequence.class
         );
-
         return !Objects.isNull(counter)? counter.getSeq():1;
     }
-
 }

@@ -2,13 +2,11 @@ package com.blog.IdeaNestle.payload.response;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 public class JwtResponse {
-
 	private String token;
 	private int id;
 	private String username;
