@@ -21,6 +21,7 @@ public class PostRequest {
     @NotBlank
     private String content;
     private String username;
+    private String status;
     @NotBlank
     private List<Category.ECategory> categories;
 

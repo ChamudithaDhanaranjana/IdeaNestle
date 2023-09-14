@@ -19,11 +19,25 @@ public class Category implements Serializable {
     @NotBlank
     private ECategory name;
 
-    public enum ECategory {
-        CATEGORY_TECHNOLOGY,
-        CATEGORY_AESTHETIC,
-        CATEGORY_NEWS,
-        CATEGORY_NATURE,
-        CATEGORY_OTHER
+    public void setPostCount(int size) {
     }
+
+    public enum ECategory {
+        CATEGORY_TECHNOLOGY("Technology"),
+        CATEGORY_AESTHETIC("Aesthetic"),
+        CATEGORY_NEWS("News"),
+        CATEGORY_NATURE("Nature"),
+        CATEGORY_OTHER("Nature");
+
+        private final String displayName;
+
+        ECategory(String displayName) {
+            this.displayName = displayName;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+
+        }
 }

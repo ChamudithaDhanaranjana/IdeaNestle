@@ -2,18 +2,24 @@ package com.blog.IdeaNestle.controller;
 
 
 import com.blog.IdeaNestle.model.Comment;
+import com.blog.IdeaNestle.model.Contribution;
 import com.blog.IdeaNestle.payload.request.PostRequest;
 import com.blog.IdeaNestle.payload.response.PostResponse;
+import com.blog.IdeaNestle.service.Post.ContributionService;
 import com.blog.IdeaNestle.service.Post.PostService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
@@ -22,6 +28,9 @@ public class PostController {
 
     @Autowired
     private PostService postService;
+
+    @Autowired
+    private ContributionService contributionService;
     @Autowired
     private AuthenticationManager authenticationManager;
     public PostController(PostService postService) {
@@ -38,9 +47,14 @@ public class PostController {
     }
 
     @GetMapping("/get/posts")
-    public ResponseEntity<List<PostResponse>> getAllApprovedPosts() {
-        List<PostResponse> approvedPosts = postService.getAllApprovedPosts();
+    public ResponseEntity<Page<PostResponse>> getAllApprovedPosts(@RequestParam(defaultValue = "0") int page) {
+        Page<PostResponse> approvedPosts = postService.getAllApprovedPosts(page);
         return ResponseEntity.ok(approvedPosts);
+    }
+    @GetMapping("/get/all")
+    public ResponseEntity<Page<PostResponse>> getAllPosts(@RequestParam(defaultValue = "0") int page) {
+        Page<PostResponse> postResponse = postService.getAllPosts(page);
+        return ResponseEntity.ok(postResponse);
     }
 
     @GetMapping("/{id}")
@@ -76,6 +90,18 @@ public class PostController {
         }
     }
 
+    @PostMapping("/{postId}/approve")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<String> approvePost(@PathVariable String postId) {
+        boolean isPostApproved = postService.approvePost(postId);
+        if (isPostApproved) {
+            return ResponseEntity.ok("Post has approved");
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+
     @PostMapping("/{id}/add-comment")
     public ResponseEntity<String> addCommentToPostById(@PathVariable String id, @RequestBody Comment comment) {
         boolean isCommentAdded = postService.addCommentToPostById(id, comment);
@@ -85,4 +111,29 @@ public class PostController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @GetMapping("/search")
+    public List<PostResponse> searchPosts(@RequestParam("searchTerm") String searchTerm) {
+        return postService.searchPosts(searchTerm);
+    }
+
+    @GetMapping("/{username}/post-count")
+    public int getPostCountByUser(@PathVariable String username) {
+        return postService.getNumberOfPostsByUser(username);
+    }
+
+    @GetMapping("/{username}/comment-count")
+    public int getCommentCountByUser(@PathVariable String username) {
+        return postService.getNumberOfCommentsReceivedByUser(username);
+    }
+
+    @GetMapping("/count")
+    public Long getPostCount() {
+        return postService.getPostCount();
+    }
+    @GetMapping("/comments/count")
+    public Long getCommentCount() {
+        return postService.getCommentCount();
+    }
+
 }
