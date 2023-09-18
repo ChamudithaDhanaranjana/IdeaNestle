@@ -9,10 +9,6 @@ import com.blog.IdeaNestle.security.jwt.JwtUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -37,31 +33,22 @@ public class PostService {
     private List<String> contributionContents;
 
     @Autowired
-    private MongoTemplate mongoTemplate;
-
-    @Autowired
     public PostService(PostRepository postRepository, JwtUtils jwtUtils, ContributionRepository contributionRepository) {
         this.postRepository = postRepository;
         this.jwtUtils = jwtUtils;
         this.contributionRepository = contributionRepository;
     }
 
-    public Page<PostResponse> getAllApprovedPosts(int pageNumber) {
-        Pageable pageable = PageRequest.of(pageNumber, 3); // Set the page size to 3
-        Page<Post> approvedPosts = postRepository.findAllByStatus(Post.PostStatus.APPROVED, pageable);
+    public List<PostResponse> getAllApprovedPosts() {
+        List<Post> approvedPosts = postRepository.findAllByStatus(Post.PostStatus.APPROVED);
+        List<String> contributionContents = new ArrayList<>();
         if (approvedPosts.isEmpty()) {
-            return null;
+            return new ArrayList<>();
         }
-        return approvedPosts.map(this::mapToResponse);
+        return approvedPosts.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
-
-    public Page<PostResponse> getAllPosts(int page) {
-        Pageable pageable = PageRequest.of(page, 5); // Set the page size to your desired value
-        Page<Post> postPage = postRepository.findAll(pageable);
-
-        return postPage.map(this::mapToResponse);
-    }
-
 
     public PostResponse getPostById(String id) {
         Post post = (Post) postRepository.findById(id).orElse(null);
@@ -76,16 +63,13 @@ public class PostService {
             }
         }
         PostResponse postResponse = new PostResponse(
-                        post.getId(),
-                        post.getStatus(),
-                        post.getTitle(),
-                        post.getContent(),
-                        post.getUsername(),
-                        post.getLocalDate(),
-                        post.getComments(),
-                        contributionContents,
-                        post.getCategories()
-                );
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getUsername(),
+                post.getComments(),
+                contributionContents
+        );
         return postResponse;
     }
 
@@ -128,14 +112,10 @@ public class PostService {
     private PostResponse mapToResponse(Post post) {
         PostResponse postResponse = new PostResponse(
                 post.getId(),
-                post.getStatus(),
                 post.getTitle(),
                 post.getContent(),
                 post.getUsername(),
-                post.getLocalDate(),
-                post.getComments(),
-                contributionContents,
-                post.getCategories()
+                post.getComments()
         );
         return postResponse;
     }
@@ -159,18 +139,6 @@ public class PostService {
         }
     }
 
-    public boolean approvePost(String postId) {
-        Optional<Object> optionalPost = postRepository.findById(postId);
-        if (optionalPost.isPresent()) {
-            Post post = (Post) optionalPost.get();
-            post.setStatus(Post.PostStatus.APPROVED);
-            postRepository.save(post);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     public boolean addCommentToPostById(String id, Comment comment) {
         Optional<Object> optionalPost = postRepository.findById(id);
         if (optionalPost.isPresent()) {
@@ -182,43 +150,4 @@ public class PostService {
             return false;
         }
     }
-
-    public List<PostResponse> searchPosts(String searchTerm) {
-        // Search for posts based on the search term
-        List<Post> matchingPosts = postRepository.findByUsernameContainingIgnoreCaseAndTitleContainingIgnoreCaseAndCategoriesContainingIgnoreCase(searchTerm, searchTerm);
-
-        // Map the matching posts to PostResponse objects
-        return matchingPosts.stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
-    }
-
-    public int getNumberOfPostsByUser(String username) {
-        return postRepository.countByUsername(username);
-    }
-
-    public int getNumberOfCommentsReceivedByUser(String username) {
-        List<Post> userPosts = postRepository.findByUsername(username);
-        int commentCount = 0;
-
-        for (Post post : userPosts) {
-            commentCount += post.getComments().size();
-        }
-
-        return commentCount;
-    }
-
-    public int getNumberOfContributionsByUser(String username) {
-        List<Contribution> userContributions = contributionRepository.findByContributorUsername(username);
-        return userContributions.size();
-    }
-
-    public Long getPostCount() {
-        return postRepository.count();
-    }
-    public Long getCommentCount() {
-        return postRepository.count();
-    }
-
-
 }

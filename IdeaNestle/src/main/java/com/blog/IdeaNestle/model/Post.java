@@ -1,6 +1,5 @@
 package com.blog.IdeaNestle.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -34,7 +33,6 @@ public class Post implements Serializable {
     @NotBlank
     @Size(max = 30)
     private String username;
-    @JsonFormat(pattern="yyyy-MM-dd")
     LocalDate localDate = LocalDate.now();
 
     private List<Category.ECategory> categories = new ArrayList<>();

@@ -12,14 +12,9 @@ import com.blog.IdeaNestle.payload.response.MessageResponse;
 import com.blog.IdeaNestle.repository.RoleRepository;
 import com.blog.IdeaNestle.repository.UserRepository;
 import com.blog.IdeaNestle.security.jwt.JwtUtils;
-import jakarta.persistence.EntityNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -60,8 +55,7 @@ public class AuthService {
     private SequenceGeneratorService sequenceGeneratorService;
     @Autowired
     private SequenceGeneratorService service;
-    @Autowired
-    private MongoTemplate mongoTemplate;
+
     public ResponseEntity<?> authenticateUser(LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -159,18 +153,6 @@ public class AuthService {
         }
     }
 
-    public ResponseEntity<String> activeUserByUsername(@PathVariable String username) {
-        User user = userRepository.findByUsername(username);
-        if (user != null) {
-            // Change the user's state to INACTIVE and save
-            user.setState(User.UserState.ACTIVE);
-            userRepository.save(user);
-            return ResponseEntity.ok("User active successfully");
-        } else {
-            return ResponseEntity.notFound().build(); // Return 404 Not Found if user not found
-        }
-    }
-
     public ResponseEntity<List<User>> getActiveUsers() {
         List<User> activeUsers = userRepository.findByState(User.UserState.ACTIVE);
         return ResponseEntity.ok(activeUsers);
@@ -219,39 +201,4 @@ public class AuthService {
             return ResponseEntity.notFound().build();
         }
     }
-
-    public User findByUsername(String username) {
-        User user = userRepository.findByUsername(username);
-        if (user == null) {
-            throw new UsernameNotFoundException("User not found with username: " + username);
-        }
-
-        return UserDetailsImpl.build(user).getUser();
-    }
-
-    public List<Role.ERole> getUserRoleNamesById(Long userId) {
-        Optional<User> optionalUser = userRepository.findById(userId);
-        if (optionalUser.isPresent()) {
-            User user = optionalUser.get();
-            Set<Role> roles = user.getRoles();
-            return roles.stream()
-                    .map(Role::getName) // Extract role names
-                    .collect(Collectors.toList());
-        } else {
-            throw new EntityNotFoundException("User not found with ID: " + userId);
-        }
-    }
-    public Long getUserCount() {
-        return userRepository.count();
-    }
-    public long getCountOfActiveUsers() {
-        return userRepository.countByState(User.UserState.ACTIVE);
-    }
-    public List<User> getAllUsersWithUserRole() {
-        Role userRole = roleRepository.findByName(Role.ERole.ROLE_USER)
-                .orElseThrow(() -> new RuntimeException("Error: Role 'ROLE_USER' not found."));
-
-        return userRepository.findByRolesContaining(userRole);
-    }
-
 }
